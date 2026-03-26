@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}CineVault — My List{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <h1 class="page-title">MY <span class="accent">WATCHLIST</span></h1>
+  <div class="watchlist-filters">
+    <button class="filter-pill active" data-filter="">All</button>
+    <button class="filter-pill" data-filter="false">To Watch</button>
+    <button class="filter-pill" data-filter="true">Watched</button>
+  </div>
+</section>
+
+<div id="watchlistGrid" class="movies-grid"></div>
+<p id="emptyState" class="empty-state hidden">Nothing here yet. <a href="/">Discover movies →</a></p>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/movies.js') }}"></script>
+<script src="{{ url_for('static', filename='js/watchlist.js') }}"></script>
+{% endblock %}

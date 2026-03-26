@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}CineVault — {{ mode|capitalize }}{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+  <div class="auth-card">
+    <h1 class="auth-title">{% if mode == 'login' %}WELCOME<br><span class="accent">BACK</span>{% else %}JOIN THE<br><span class="accent">VAULT</span>{% endif %}</h1>
+
+    <form id="authForm" class="auth-form">
+      {% if mode == 'register' %}
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" id="username" class="form-input" placeholder="e.g. cinephile42" required />
+      </div>
+      {% endif %}
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="email" class="form-input" placeholder="you@example.com" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="password" class="form-input" placeholder="••••••••" required />
+      </div>
+      <div id="authError" class="form-error hidden"></div>
+      <button type="submit" class="btn-primary btn-full">
+        {% if mode == 'login' %}LOG IN{% else %}CREATE ACCOUNT{% endif %}
+      </button>
+    </form>
+
+    <p class="auth-switch">
+      {% if mode == 'login' %}
+        No account? <a href="/register">Register here</a>
+      {% else %}
+        Have an account? <a href="/login">Log in</a>
+      {% endif %}
+    </p>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const MODE = "{{ mode }}";
+</script>
+<script src="{{ url_for('static', filename='js/authForm.js') }}"></script>
+{% endblock %}

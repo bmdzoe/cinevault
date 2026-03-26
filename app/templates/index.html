@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}CineVault — Discover{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-text">
+    <h1 class="hero-title">YOUR PERSONAL<br><span class="accent">FILM VAULT</span></h1>
+    <p class="hero-sub">Search, save, and track every movie you love.</p>
+  </div>
+  <form class="search-bar" id="searchForm">
+    <input type="text" id="searchInput" class="search-input" placeholder="Search for a movie…" autocomplete="off" />
+    <button type="submit" class="btn-primary">SEARCH</button>
+  </form>
+</section>
+
+<div id="searchResult" class="search-result hidden"></div>
+
+<section class="browse-section">
+  <div class="browse-header">
+    <h2 class="section-title">THE VAULT</h2>
+    <div class="filters">
+      <select id="filterGenre" class="filter-select"><option value="">All Genres</option></select>
+      <select id="filterRating" class="filter-select">
+        <option value="">All Ratings</option>
+        <option>G</option><option>PG</option><option>PG-13</option><option>R</option><option>NC-17</option><option>NR</option>
+      </select>
+      <select id="sortBy" class="filter-select">
+        <option value="added_at">Recently Added</option>
+        <option value="title">Title A–Z</option>
+        <option value="release_year">Release Year</option>
+      </select>
+    </div>
+  </div>
+  <div id="moviesGrid" class="movies-grid"></div>
+  <div id="pagination" class="pagination"></div>
+</section>
+
+<!-- Movie Detail Modal -->
+<div id="movieModal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/movies.js') }}"></script>
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}
