@@ -22,7 +22,7 @@ def register():
     db.session.commit()
     login_user(user)
     return jsonify({"message": "Account created.", "user": user.to_dict()}), 201
-@auth_bp.route("/login", methods=["POST"])
+@auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     schema = LoginSchema()
     try:
