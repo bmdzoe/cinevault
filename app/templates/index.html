@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block title %}CineVault — Discover{% endblock %}
-
 {% block content %}
 <section class="hero">
   <div class="hero-text">
@@ -12,9 +11,7 @@
     <button type="submit" class="btn-primary">SEARCH</button>
   </form>
 </section>
-
 <div id="searchResult" class="search-result hidden"></div>
-
 <section class="browse-section">
   <div class="browse-header">
     <h2 class="section-title">THE VAULT</h2>
@@ -34,7 +31,6 @@
   <div id="moviesGrid" class="movies-grid"></div>
   <div id="pagination" class="pagination"></div>
 </section>
-
 <!-- Movie Detail Modal -->
 <div id="movieModal" class="modal hidden">
   <div class="modal-backdrop"></div>
@@ -44,7 +40,6 @@
   </div>
 </div>
 {% endblock %}
-
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/movies.js') }}"></script>
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>
