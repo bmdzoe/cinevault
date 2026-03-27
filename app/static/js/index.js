@@ -1,14 +1,11 @@
 let currentPage = 1;
-
 async function searchMovie(e) {
   e.preventDefault();
   const title = document.getElementById("searchInput").value.trim();
   if (!title) return;
-
   const resultEl = document.getElementById("searchResult");
   resultEl.innerHTML = `<div class="skeleton" style="height:200px;border-radius:4px"></div>`;
   resultEl.classList.remove("hidden");
-
   try {
     const movie = await API.get(`/api/movies/search?title=${encodeURIComponent(title)}`);
     renderSearchResult(movie, resultEl);
@@ -16,16 +13,13 @@ async function searchMovie(e) {
     resultEl.innerHTML = `<p style="color:var(--red);padding:1rem">${err.message}</p>`;
   }
 }
-
 function renderSearchResult(movie, container) {
   const posterHtml = movie.poster_url
     ? `<img class="result-poster" src="${movie.poster_url}" alt="${movie.title}">`
     : `<div class="result-poster-placeholder">🎬</div>`;
-
   const providers = movie.streaming_providers?.length
     ? `<p class="result-providers"><strong>Streaming on:</strong> ${movie.streaming_providers.join(", ")}</p>`
     : `<p class="result-providers" style="color:var(--text-muted)">Not available for streaming</p>`;
-
   container.innerHTML = `
     <div class="result-card">
       ${posterHtml}
@@ -44,7 +38,6 @@ function renderSearchResult(movie, container) {
       </div>
     </div>
   `;
-
   document.getElementById("saveMovieBtn").onclick = async () => {
     if (!currentUser) {
       showToast("Log in to save movies.", "error");
@@ -59,12 +52,10 @@ function renderSearchResult(movie, container) {
     }
   };
 }
-
 async function loadMovies() {
   const genre = document.getElementById("filterGenre").value;
   const rating = document.getElementById("filterRating").value;
   const sortBy = document.getElementById("sortBy").value;
-
   const params = new URLSearchParams({
     page: currentPage,
     per_page: 12,
@@ -73,14 +64,11 @@ async function loadMovies() {
     ...(genre && { genre }),
     ...(rating && { rating }),
   });
-
   const grid = document.getElementById("moviesGrid");
   grid.innerHTML = Array(6).fill(`<div class="skeleton" style="aspect-ratio:2/3;border-radius:4px"></div>`).join("");
-
   try {
     const data = await API.get(`/api/movies/?${params}`);
     grid.innerHTML = "";
-
     if (data.movies.length === 0) {
       grid.innerHTML = `<p class="empty-state" style="grid-column:1/-1">No movies in the vault yet.</p>`;
     } else {
@@ -89,18 +77,15 @@ async function loadMovies() {
         grid.appendChild(card);
       });
     }
-
     renderPagination(data.pages, data.current_page);
   } catch (err) {
     grid.innerHTML = `<p style="color:var(--red);padding:1rem">${err.message}</p>`;
   }
 }
-
 function renderPagination(totalPages, current) {
   const el = document.getElementById("pagination");
   el.innerHTML = "";
   if (totalPages <= 1) return;
-
   for (let i = 1; i <= totalPages; i++) {
     const btn = document.createElement("button");
     btn.className = "page-btn" + (i === current ? " active" : "");
@@ -109,7 +94,6 @@ function renderPagination(totalPages, current) {
     el.appendChild(btn);
   }
 }
-
 async function populateGenreFilter() {
   try {
     const data = await API.get("/api/movies/?per_page=200");
@@ -123,7 +107,6 @@ async function populateGenreFilter() {
     });
   } catch { /* ignore */ }
 }
-
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("searchForm")?.addEventListener("submit", searchMovie);
   document.getElementById("filterGenre")?.addEventListener("change", () => { currentPage = 1; loadMovies(); });
