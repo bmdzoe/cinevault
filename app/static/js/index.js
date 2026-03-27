@@ -14,8 +14,9 @@ async function searchMovie(e) {
   }
 }
 function renderSearchResult(movie, container) {
-  const posterHtml = movie.poster_url
-    ? `<img class="result-poster" src="${movie.poster_url}" alt="${movie.title}">`
+const posterUrl = movie.poster_url || (movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null);
+const posterHtml = posterUrl
+    ? `<img class="result-poster" src="${posterUrl}" alt="${movie.title}">`
     : `<div class="result-poster-placeholder">🎬</div>`;
   const providers = movie.streaming_providers?.length
     ? `<p class="result-providers"><strong>Streaming on:</strong> ${movie.streaming_providers.join(", ")}</p>`
