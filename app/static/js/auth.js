@@ -1,6 +1,4 @@
-// Manages navbar auth state on every page
 let currentUser = null;
-
 async function loadAuthState() {
   const navAuth = document.getElementById("nav-auth");
   if (!navAuth) return;
@@ -23,5 +21,4 @@ async function loadAuthState() {
     `;
   }
 }
-
 document.addEventListener("DOMContentLoaded", loadAuthState);
