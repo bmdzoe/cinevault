@@ -1,14 +1,11 @@
 const IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
-
 function renderMovieCard(movie, options = {}) {
   const card = document.createElement("div");
   card.className = "movie-card" + (options.watchlistClass ? ` ${options.watchlistClass}` : "");
   card.dataset.id = movie.id;
-
   const posterHtml = movie.poster_url
     ? `<img class="movie-card-poster" src="${movie.poster_url}" alt="${movie.title}" loading="lazy">`
     : `<div class="movie-card-poster-placeholder">🎬</div>`;
-
   card.innerHTML = `
     ${posterHtml}
     <div class="movie-card-body">
@@ -17,31 +14,23 @@ function renderMovieCard(movie, options = {}) {
       ${options.extraHtml || ""}
     </div>
   `;
-
   if (options.onClick) {
     card.addEventListener("click", (e) => {
       if (e.target.tagName === "BUTTON") return;
       options.onClick(movie);
     });
   }
-
   return card;
 }
-
-// ── Modal ──────────────────────────────────────────────────────────────────
-
 function openMovieModal(movie) {
   const modal = document.getElementById("movieModal");
   const body = document.getElementById("modalBody");
-
   const posterHtml = movie.poster_url
     ? `<img class="modal-poster" src="${movie.poster_url}" alt="${movie.title}">`
     : "";
-
   const providers = movie.streaming_providers?.length
     ? `<p class="result-providers" style="margin-top:0.5rem"><strong>Streaming:</strong> ${movie.streaming_providers.join(", ")}</p>`
     : "";
-
   body.innerHTML = `
     <div class="modal-poster-row">
       ${posterHtml}
@@ -63,29 +52,21 @@ function openMovieModal(movie) {
     </div>
     <div class="modal-actions" id="modalActions"></div>
   `;
-
   renderModalActions(movie);
   loadReviews(movie.id);
   modal.classList.remove("hidden");
 }
-
 function closeModal() {
   document.getElementById("movieModal").classList.add("hidden");
 }
-
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("modalClose")?.addEventListener("click", closeModal);
   document.querySelector(".modal-backdrop")?.addEventListener("click", closeModal);
 });
-
-// ── Modal Actions ──────────────────────────────────────────────────────────
-
 function renderModalActions(movie) {
   const actionsEl = document.getElementById("modalActions");
   if (!actionsEl) return;
-
   actionsEl.innerHTML = "";
-
   if (currentUser) {
     const addWlBtn = document.createElement("button");
     addWlBtn.className = "btn-primary";
@@ -99,7 +80,6 @@ function renderModalActions(movie) {
       }
     };
     actionsEl.appendChild(addWlBtn);
-
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "btn-danger";
     deleteBtn.textContent = "Delete Movie";
@@ -117,16 +97,12 @@ function renderModalActions(movie) {
     actionsEl.appendChild(deleteBtn);
   }
 }
-
-// ── Reviews ────────────────────────────────────────────────────────────────
-
 async function loadReviews(movieId) {
   try {
     const data = await API.get(`/api/movies/${movieId}`);
     const reviews = data.reviews || [];
     const listEl = document.getElementById("reviewsList");
     const formEl = document.getElementById("reviewFormContainer");
-
     if (reviews.length === 0) {
       listEl.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem">No reviews yet.</p>`;
     } else {
@@ -140,7 +116,6 @@ async function loadReviews(movieId) {
         </div>
       `).join("");
     }
-
     if (currentUser) {
       const alreadyReviewed = reviews.some(r => r.user === currentUser.username);
       if (!alreadyReviewed) {
