@@ -1,15 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("authForm");
   const errorEl = document.getElementById("authError");
-
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     errorEl.classList.add("hidden");
     errorEl.textContent = "";
-
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
-
     try {
       if (MODE === "register") {
         const username = document.getElementById("username").value;
