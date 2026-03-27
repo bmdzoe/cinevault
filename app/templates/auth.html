@@ -1,11 +1,9 @@
 {% extends "base.html" %}
 {% block title %}CineVault — {{ mode|capitalize }}{% endblock %}
-
 {% block content %}
 <section class="auth-section">
   <div class="auth-card">
     <h1 class="auth-title">{% if mode == 'login' %}WELCOME<br><span class="accent">BACK</span>{% else %}JOIN THE<br><span class="accent">VAULT</span>{% endif %}</h1>
-
     <form id="authForm" class="auth-form">
       {% if mode == 'register' %}
       <div class="form-group">
@@ -26,7 +24,6 @@
         {% if mode == 'login' %}LOG IN{% else %}CREATE ACCOUNT{% endif %}
       </button>
     </form>
-
     <p class="auth-switch">
       {% if mode == 'login' %}
         No account? <a href="/register">Register here</a>
@@ -37,7 +34,6 @@
   </div>
 </section>
 {% endblock %}
-
 {% block scripts %}
 <script>
 const MODE = "{{ mode }}";
