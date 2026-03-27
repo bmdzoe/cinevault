@@ -23,4 +23,4 @@ class MovieFilterSchema(Schema):
     sort_by = fields.Str(validate=validate.OneOf(["title", "release_year", "added_at", "rating"]))
     order = fields.Str(validate=validate.OneOf(["asc", "desc"]), load_default="asc")
     page = fields.Int(validate=validate.Range(min=1), load_default=1)
-    per_page = fields.Int(validate=validate.Range(min=1, max=50), load_default=12)
+    per_page = fields.Int(validate=validate.Range(min=1, max=200), load_default=12)
