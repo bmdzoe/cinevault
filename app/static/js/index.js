@@ -99,14 +99,29 @@ async function populateGenreFilter() {
   try {
     const data = await API.get("/api/movies/?per_page=200");
     const genres = new Set();
-    data.movies.forEach(m => m.genre?.split(", ").forEach(g => genres.add(g.trim())));
+    data.movies.forEach(m => {
+      if (m.genre) {
+        m.genre.split(",").forEach(g => {
+          const trimmed = g.trim();
+          if (trimmed) genres.add(trimmed);
+        });
+      }
+    });
     const select = document.getElementById("filterGenre");
-    genres.forEach(g => {
+    // Clear existing options except the first one
+    while (select.options.length > 1) {
+      select.remove(1);
+    }
+    // Sort and add genres
+    [...genres].sort().forEach(g => {
       const opt = document.createElement("option");
-      opt.value = g; opt.textContent = g;
+      opt.value = g;
+      opt.textContent = g;
       select.appendChild(opt);
     });
-  } catch { /* ignore */ }
+  } catch (err) {
+    console.error("Genre filter error:", err);
+  }
 }
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("searchForm")?.addEventListener("submit", searchMovie);
