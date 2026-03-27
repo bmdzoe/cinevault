@@ -11,6 +11,7 @@ login_manager = LoginManager()
 cache = Cache()
 bcrypt = Bcrypt()
 login_manager.login_view = "auth.login"
+login_manager.login_message = None
 login_manager.login_message_category = "info"
 def create_app(config_name="default"):
     app = Flask(__name__)
