@@ -2,16 +2,6 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 def setup_logger(app):
-    """
-    Sets up logging for the Flask app.
-    Why RotatingFileHandler?
-    - Automatically creates a new log file when it hits 1MB
-    - Keeps the last 5 log files as backups
-    - Prevents logs from eating up all your disk space
-    Why two handlers?
-    - File handler: saves logs permanently so you can review them later
-    - Stream handler: prints logs to the console/Railway dashboard in real time
-    """
     # Set the logging level — DEBUG captures everything,
     # INFO skips verbose debug messages in production
     log_level = logging.DEBUG if app.config.get("DEBUG") else logging.INFO
