@@ -156,3 +156,17 @@ def delete_review(movie_id, review_id):
     db.session.delete(review)
     db.session.commit()
     return jsonify({"message": "Review deleted."}), 200
+@movies_bp.route("/<int:movie_id>/trailers", methods=["GET"])
+def get_trailers(movie_id):
+    """
+    Why a separate endpoint?
+    Trailers are only needed when a user opens the movie modal.
+    Fetching them with every movie in the list would be slow and
+    waste API calls. This way we only fetch when actually needed.
+    """
+    movie = Movie.query.get_or_404(movie_id)
+    try:
+        trailers = tmdb.get_trailers(movie.tmdb_id)
+        return jsonify({"trailers": trailers}), 200
+    except TMDBError as e:
+        return jsonify({"error": str(e)}), 502

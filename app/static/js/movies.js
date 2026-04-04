@@ -45,6 +45,7 @@ function openMovieModal(movie) {
       </div>
     </div>
     ${movie.overview ? `<p class="modal-overview">${movie.overview}</p>` : ""}
+    <div id="trailersSection" class="modal-trailers"></div>
     <div class="modal-reviews" id="modalReviews">
       <h3>REVIEWS</h3>
       <div id="reviewsList"></div>
@@ -54,6 +55,7 @@ function openMovieModal(movie) {
   `;
   renderModalActions(movie);
   loadReviews(movie.id);
+  loadTrailers(movie.id);
   modal.classList.remove("hidden");
 }
 function closeModal() {
@@ -145,3 +147,7 @@ async function loadReviews(movieId) {
     // silently fail
   }
 }
+renderModalActions(movie);
+  loadReviews(movie.id);
+  loadTrailers(movie.id);
+  modal.classList.remove("hidden");

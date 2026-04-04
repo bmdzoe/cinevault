@@ -60,6 +60,28 @@ class TMDBService:
     def resolve_genres(self, genre_ids: list[int]) -> str:
         genre_map = self.get_genre_map()
         return ", ".join(genre_map.get(gid, "Unknown") for gid in genre_ids)
+    def get_trailers(self, movie_id: int) -> list[dict]:
+        """
+        Fetches YouTube trailers from TMDB.
+        We filter for YouTube videos of type 'Trailer' only
+        so we don't show behind the scenes clips or teasers
+        unless there are no trailers available.
+        """
+        data = self._get(f"/movie/{movie_id}/videos")
+        videos = data.get("results", [])
+        trailers = [
+            {"name": v["name"], "key": v["key"]}
+            for v in videos
+            if v["site"] == "YouTube" and v["type"] == "Trailer"
+        ]
+        # Fall back to any YouTube video if no trailers found
+        if not trailers:
+            trailers = [
+                {"name": v["name"], "key": v["key"]}
+                for v in videos
+                if v["site"] == "YouTube"
+            ]
+        return trailers[:3]  # Return max 3 trailers
 
     def fetch_full_movie(self, tmdb_result: dict) -> dict:
         """Build a clean dict from a TMDB search result."""
