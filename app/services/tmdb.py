@@ -3,21 +3,32 @@ from flask import current_app
 from app import cache
 class TMDBService:
     """Encapsulates all TMDB API interactions with caching and error handling."""
-    def _get(self, endpoint: str, params: dict = None) -> dict:
-        base_url = current_app.config["TMDB_BASE_URL"]
-        api_key = current_app.config["TMDB_API_KEY"]
-        url = f"{base_url}{endpoint}"
-        merged_params = {"api_key": api_key, **(params or {})}
-        try:
-            response = requests.get(url, params=merged_params, timeout=8)
-            response.raise_for_status()
-            return response.json()
-        except requests.Timeout:
-            raise TMDBError("TMDB request timed out.")
-        except requests.HTTPError as e:
-            raise TMDBError(f"TMDB HTTP error: {e.response.status_code}")
-        except requests.RequestException as e:
-            raise TMDBError(f"TMDB connection error: {str(e)}")
+  def _get(self, endpoint: str, params: dict = None) -> dict:
+    """
+    Why log here?
+    Every TMDB call costs time and counts against your API rate limit.
+    Logging each call lets you spot if something is calling the API
+    too many times or if TMDB is slow/down.
+    """
+    base_url = current_app.config["TMDB_BASE_URL"]
+    api_key = current_app.config["TMDB_API_KEY"]
+    url = f"{base_url}{endpoint}"
+    merged_params = {"api_key": api_key, **(params or {})}
+    logger.info(f"TMDB request: {endpoint}")
+    try:
+        response = requests.get(url, params=merged_params, timeout=8)
+        response.raise_for_status()
+        logger.info(f"TMDB response: {response.status_code} for {endpoint}")
+        return response.json()
+    except requests.Timeout:
+        logger.error(f"TMDB timeout for {endpoint}")
+        raise TMDBError("TMDB request timed out.")
+    except requests.HTTPError as e:
+        logger.error(f"TMDB HTTP error {e.response.status_code} for {endpoint}")
+        raise TMDBError(f"TMDB HTTP error: {e.response.status_code}")
+    except requests.RequestException as e:
+        logger.error(f"TMDB connection error for {endpoint}: {str(e)}")
+        raise TMDBError(f"TMDB connection error: {str(e)}")
     def search_movie(self, title: str) -> list[dict]:
         data = self._get("/search/movie", {"query": title})
         return data.get("results", [])

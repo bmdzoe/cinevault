@@ -21,6 +21,26 @@ def create_app(config_name="default"):
     login_manager.init_app(app)
     cache.init_app(app)
     bcrypt.init_app(app)
+    # Set up logging before anything else so we capture all startup events
+    from app.logger import setup_logger
+    setup_logger(app)
+    # Log every single incoming request automatically
+    # This gives you a full picture of traffic without touching every route
+    @app.before_request
+    def log_request():
+        from flask import request
+        app.logger.info(f"Request: {request.method} {request.path} from {request.remote_addr}")
+    # Log every response — useful for spotting patterns in errors
+    @app.after_request
+    def log_response(response):
+        app.logger.info(f"Response: {response.status_code}")
+        return response
+    # Log unhandled exceptions with full stack trace
+    # Without this you just see a 500 error with no details
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        app.logger.error(f"Unhandled exception: {e}", exc_info=True)
+        return {"error": "Internal server error"}, 500
     from app.routes.auth import auth_bp
     from app.routes.movies import movies_bp
     from app.routes.watchlist import watchlist_bp

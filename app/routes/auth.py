@@ -4,6 +4,8 @@ from marshmallow import ValidationError
 from app import db, bcrypt
 from app.models import User
 from app.schemas import RegisterSchema, LoginSchema
+import logging
+logger = logging.getLogger(__name__)
 auth_bp = Blueprint("auth", __name__)
 @auth_bp.route("/register", methods=["POST"])
 def register():
@@ -20,7 +22,9 @@ def register():
     user = User(username=data["username"], email=data["email"], password_hash=hashed_pw)
     db.session.add(user)
     db.session.commit()
+    logger.info(f"New user registered: {user.username} ({user.email})")
     login_user(user)
+    logger.info(f"User logged in: {user.username}")
     return jsonify({"message": "Account created.", "user": user.to_dict()}), 201
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
@@ -38,6 +42,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    logger.info(f"User logged out: {current_user.username}")	
     return jsonify({"message": "Logged out."}), 200
 @auth_bp.route("/me", methods=["GET"])
 @login_required
