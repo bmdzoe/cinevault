@@ -25,6 +25,9 @@ function renderMovieCard(movie, options = {}) {
 function openMovieModal(movie) {
   const modal = document.getElementById("movieModal");
   const body = document.getElementById("modalBody");
+  // Fully wipe modal body before rendering new content
+  // This prevents stale content from previous movie showing through
+  body.innerHTML = "";
   const posterHtml = movie.poster_url
     ? `<img class="modal-poster" src="${movie.poster_url}" alt="${movie.title}">`
     : "";
@@ -54,6 +57,9 @@ function openMovieModal(movie) {
     </div>
     <div class="modal-actions" id="modalActions"></div>
   `;
+  // Store current movie ID on the modal so async callbacks
+  // can check if the modal has been switched before rendering
+  modal.dataset.movieId = movie.id;
   renderModalActions(movie);
   loadReviews(movie.id);
   loadTrailers(movie.id);
@@ -150,16 +156,18 @@ async function loadReviews(movieId) {
 }
 async function loadTrailers(movieId) {
   const section = document.getElementById("trailersSection");
+  const modal = document.getElementById("movieModal");
   if (!section) return;
   section.innerHTML = "";
   try {
     const data = await API.get(`/api/movies/${movieId}/trailers`);
+    // Discard results if user switched movies while loading
+    if (modal.dataset.movieId != movieId) return;
     const trailers = data.trailers;
     if (!trailers || trailers.length === 0) {
       section.innerHTML = "";
       return;
     }
-    // Show the first trailer embedded, with buttons for additional ones
     section.innerHTML = `
       <div class="trailer-container">
         <h3 class="trailer-title">TRAILER</h3>
@@ -198,10 +206,14 @@ function switchTrailer(key, name, btn) {
 }
 async function loadRecommendations(movieId) {
   const section = document.getElementById("recommendationsSection");
+  const modal = document.getElementById("movieModal");
   if (!section) return;
   section.innerHTML = "";
   try {
     const data = await API.get(`/api/movies/${movieId}/recommendations`);
+    // Check if user switched to a different movie while this was loading
+    // If so, discard these results to prevent showing wrong recommendations
+    if (modal.dataset.movieId != movieId) return;
     const recs = data.recommendations;
     if (!recs || recs.length === 0) {
       section.innerHTML = "";
@@ -214,12 +226,13 @@ async function loadRecommendations(movieId) {
       </div>
     `;
     const grid = document.getElementById("recsGrid");
-    // Also fetch saved movies so we can link to ones already in the vault
     let savedMovies = [];
     try {
       const saved = await API.get("/api/movies/?per_page=200");
       savedMovies = saved.movies;
     } catch { /* ignore */ }
+    // Check again after the second API call
+    if (modal.dataset.movieId != movieId) return;
     recs.forEach(rec => {
       const savedMatch = savedMovies.find(m => m.tmdb_id === rec.tmdb_id);
       const card = document.createElement("div");
@@ -235,8 +248,6 @@ async function loadRecommendations(movieId) {
         </div>
         ${savedMatch ? `<div class="rec-saved-badge">In Vault</div>` : ""}
       `;
-      // If the movie is already in the vault, open its modal
-      // Otherwise search for it on TMDB
       card.onclick = () => {
         if (savedMatch) {
           openMovieModal(savedMatch);
