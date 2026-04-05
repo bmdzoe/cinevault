@@ -10,9 +10,12 @@ async function loadAuthState() {
       <button class="btn-ghost" id="logoutBtn">Logout</button>
     `;
     document.getElementById("logoutBtn").addEventListener("click", async () => {
-      await API.post("/auth/logout");
+      try {
+        await API.post("/auth/logout");
+      } catch {
+      }
       currentUser = null;
-      window.location.reload();
+      window.location.href = "/";
     });
   } catch {
     navAuth.innerHTML = `
