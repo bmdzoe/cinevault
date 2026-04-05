@@ -161,7 +161,9 @@ def get_trailers(movie_id):
     movie = Movie.query.get_or_404(movie_id)
     try:
         trailers = tmdb.get_trailers(movie.tmdb_id)
-        return jsonify({"trailers": trailers}), 200
+        response = jsonify({"trailers": trailers})
+        response.headers["Cache-Control"] = "no-store"
+        return response, 200
     except TMDBError as e:
         return jsonify({"error": str(e)}), 502
 @movies_bp.route("/<int:movie_id>/recommendations", methods=["GET"])
@@ -169,6 +171,9 @@ def get_recommendations(movie_id):
     movie = Movie.query.get_or_404(movie_id)
     try:
         recommendations = tmdb.get_recommendations(movie.tmdb_id)
-        return jsonify({"recommendations": recommendations}), 200
+        response = jsonify({"recommendations": recommendations})
+        # Disable caching for recommendations so each movie gets unique results
+        response.headers["Cache-Control"] = "no-store"
+        return response, 200
     except TMDBError as e:
         return jsonify({"error": str(e)}), 502
