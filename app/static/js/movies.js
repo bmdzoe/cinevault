@@ -46,6 +46,7 @@ function openMovieModal(movie) {
     </div>
     ${movie.overview ? `<p class="modal-overview">${movie.overview}</p>` : ""}
     <div id="trailersSection" class="modal-trailers"></div>
+    <div id="recommendationsSection" class="modal-recommendations"></div>
     <div class="modal-reviews" id="modalReviews">
       <h3>REVIEWS</h3>
       <div id="reviewsList"></div>
@@ -56,6 +57,7 @@ function openMovieModal(movie) {
   renderModalActions(movie);
   loadReviews(movie.id);
   loadTrailers(movie.id);
+  loadRecommendations(movie.id);
   modal.classList.remove("hidden");
 }
 function closeModal() {
@@ -144,19 +146,11 @@ async function loadReviews(movieId) {
       }
     }
   } catch {
-    // silently fail
   }
 }
 async function loadTrailers(movieId) {
-  /*
-   * Why load trailers separately?
-   * We fetch trailers only when the modal opens, not when listing movies.
-   * This keeps the main page fast and only makes the TMDB API call
-   * when the user actually wants to see trailer info.
-   */
   const section = document.getElementById("trailersSection");
   if (!section) return;
-
   try {
     const data = await API.get(`/api/movies/${movieId}/trailers`);
     const trailers = data.trailers;
@@ -165,7 +159,6 @@ async function loadTrailers(movieId) {
       section.innerHTML = "";
       return;
     }
-
     // Show the first trailer embedded, with buttons for additional ones
     section.innerHTML = `
       <div class="trailer-container">
@@ -195,7 +188,6 @@ async function loadTrailers(movieId) {
       </div>
     `;
   } catch {
-    // Silently fail — trailers are a nice to have, not critical
   }
 }
 function switchTrailer(key, name, btn) {
@@ -203,4 +195,59 @@ function switchTrailer(key, name, btn) {
     `https://www.youtube.com/embed/${key}?rel=0&autoplay=1`;
   document.querySelectorAll(".trailer-tab").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
+}
+async function loadRecommendations(movieId) {
+  const section = document.getElementById("recommendationsSection");
+  if (!section) return;
+  try {
+    const data = await API.get(`/api/movies/${movieId}/recommendations`);
+    const recs = data.recommendations;
+    if (!recs || recs.length === 0) {
+      section.innerHTML = "";
+      return;
+    }
+    section.innerHTML = `
+      <div class="recommendations-container">
+        <h3 class="recommendations-title">YOU MIGHT ALSO LIKE</h3>
+        <div class="recommendations-grid" id="recsGrid"></div>
+      </div>
+    `;
+    const grid = document.getElementById("recsGrid");
+    // Also fetch saved movies so we can link to ones already in the vault
+    let savedMovies = [];
+    try {
+      const saved = await API.get("/api/movies/?per_page=200");
+      savedMovies = saved.movies;
+    } catch { /* ignore */ }
+    recs.forEach(rec => {
+      const savedMatch = savedMovies.find(m => m.tmdb_id === rec.tmdb_id);
+      const card = document.createElement("div");
+      card.className = "rec-card";
+      const posterHtml = rec.poster_url
+        ? `<img class="rec-poster" src="${rec.poster_url}" alt="${rec.title}" loading="lazy">`
+        : `<div class="rec-poster-placeholder">🎬</div>`;
+      card.innerHTML = `
+        ${posterHtml}
+        <div class="rec-info">
+          <div class="rec-title">${rec.title}</div>
+          <div class="rec-year">${rec.release_year || "—"}</div>
+        </div>
+        ${savedMatch ? `<div class="rec-saved-badge">In Vault</div>` : ""}
+      `;
+      // If the movie is already in the vault, open its modal
+      // Otherwise search for it on TMDB
+      card.onclick = () => {
+        if (savedMatch) {
+          openMovieModal(savedMatch);
+        } else {
+          closeModal();
+          document.getElementById("searchInput").value = rec.title;
+          document.getElementById("searchForm").dispatchEvent(new Event("submit"));
+          window.scrollTo(0, 0);
+        }
+      };
+      grid.appendChild(card);
+    });
+  } catch {
+  }
 }
