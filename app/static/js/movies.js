@@ -199,6 +199,7 @@ function switchTrailer(key, name, btn) {
 async function loadRecommendations(movieId) {
   const section = document.getElementById("recommendationsSection");
   if (!section) return;
+  section.innerHTML = "";
   try {
     const data = await API.get(`/api/movies/${movieId}/recommendations`);
     const recs = data.recommendations;
