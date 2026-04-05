@@ -207,12 +207,16 @@ function switchTrailer(key, name, btn) {
 async function loadRecommendations(movieId) {
   const modal = document.getElementById("movieModal");
   if (!modal) return;
-  // Create a fresh recommendations section every time
-  let section = document.getElementById("recommendationsSection");
-  if (!section) return;
-  section.innerHTML = '<p style="color:var(--text-muted);font-size:0.8rem;padding:1rem">Loading recommendations...</p>';
+  // Query section fresh and clear it immediately
+  document.getElementById("recommendationsSection").innerHTML = 
+    '<p style="color:var(--text-muted);font-size:0.8rem;padding:1rem">Loading...</p>';
   try {
     const data = await API.get(`/api/movies/${movieId}/recommendations`);
+    // Query the section FRESH after the await
+    // The old reference may be stale after the modal rerenders
+    const section = document.getElementById("recommendationsSection");
+    if (!section) return;
+    // Bail out if user opened a different movie while this was loading
     if (modal.dataset.movieId != movieId) return;
     const recs = data.recommendations;
     if (!recs || recs.length === 0) {
@@ -242,12 +246,7 @@ async function loadRecommendations(movieId) {
     section.innerHTML = html;
   } catch (err) {
     console.error("Recommendations error:", err);
-    section.innerHTML = "";
+    const section = document.getElementById("recommendationsSection");
+    if (section) section.innerHTML = "";
   }
-}
-function searchRec(title) {
-  closeModal();
-  document.getElementById("searchInput").value = title;
-  document.getElementById("searchForm").dispatchEvent(new Event("submit"));
-  window.scrollTo(0, 0);
 }
