@@ -205,61 +205,49 @@ function switchTrailer(key, name, btn) {
   btn.classList.add("active");
 }
 async function loadRecommendations(movieId) {
-  const section = document.getElementById("recommendationsSection");
   const modal = document.getElementById("movieModal");
+  if (!modal) return;
+  // Create a fresh recommendations section every time
+  let section = document.getElementById("recommendationsSection");
   if (!section) return;
-  section.innerHTML = "";
+  section.innerHTML = '<p style="color:var(--text-muted);font-size:0.8rem;padding:1rem">Loading recommendations...</p>';
   try {
     const data = await API.get(`/api/movies/${movieId}/recommendations`);
-    // Check if user switched to a different movie while this was loading
-    // If so, discard these results to prevent showing wrong recommendations
     if (modal.dataset.movieId != movieId) return;
     const recs = data.recommendations;
     if (!recs || recs.length === 0) {
       section.innerHTML = "";
       return;
     }
-    section.innerHTML = `
+    let html = `
       <div class="recommendations-container">
         <h3 class="recommendations-title">YOU MIGHT ALSO LIKE</h3>
-        <div class="recommendations-grid" id="recsGrid"></div>
-      </div>
+        <div class="recommendations-grid">
     `;
-    const grid = document.getElementById("recsGrid");
-    let savedMovies = [];
-    try {
-      const saved = await API.get("/api/movies/?per_page=200");
-      savedMovies = saved.movies;
-    } catch { /* ignore */ }
-    // Check again after the second API call
-    if (modal.dataset.movieId != movieId) return;
     recs.forEach(rec => {
-      const savedMatch = savedMovies.find(m => m.tmdb_id === rec.tmdb_id);
-      const card = document.createElement("div");
-      card.className = "rec-card";
-      const posterHtml = rec.poster_url
+      const poster = rec.poster_url
         ? `<img class="rec-poster" src="${rec.poster_url}" alt="${rec.title}" loading="lazy">`
         : `<div class="rec-poster-placeholder">🎬</div>`;
-      card.innerHTML = `
-        ${posterHtml}
-        <div class="rec-info">
-          <div class="rec-title">${rec.title}</div>
-          <div class="rec-year">${rec.release_year || "—"}</div>
+      html += `
+        <div class="rec-card" onclick="searchRec('${rec.title.replace(/'/g, "\\'")}')">
+          ${poster}
+          <div class="rec-info">
+            <div class="rec-title">${rec.title}</div>
+            <div class="rec-year">${rec.release_year || "—"}</div>
+          </div>
         </div>
-        ${savedMatch ? `<div class="rec-saved-badge">In Vault</div>` : ""}
       `;
-      card.onclick = () => {
-        if (savedMatch) {
-          openMovieModal(savedMatch);
-        } else {
-          closeModal();
-          document.getElementById("searchInput").value = rec.title;
-          document.getElementById("searchForm").dispatchEvent(new Event("submit"));
-          window.scrollTo(0, 0);
-        }
-      };
-      grid.appendChild(card);
     });
-  } catch {
+    html += `</div></div>`;
+    section.innerHTML = html;
+  } catch (err) {
+    console.error("Recommendations error:", err);
+    section.innerHTML = "";
   }
+}
+function searchRec(title) {
+  closeModal();
+  document.getElementById("searchInput").value = title;
+  document.getElementById("searchForm").dispatchEvent(new Event("submit"));
+  window.scrollTo(0, 0);
 }
