@@ -22,9 +22,9 @@
     {% block content %}{% endblock %}
   </main>
   <div id="toast-container"></div>
-  <script src="{{ url_for('static', filename='js/api.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script src="{{ url_for('static', filename='js/api.js') }}?v={{ range(1, 99999) | random }}"></script>
+<script src="{{ url_for('static', filename='js/toast.js') }}?v={{ range(1, 99999) | random }}"></script>
+<script src="{{ url_for('static', filename='js/auth.js') }}?v={{ range(1, 99999) | random }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>
