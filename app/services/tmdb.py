@@ -57,6 +57,22 @@ class TMDBService:
             ]
         return trailers[:3]
     @cache.cached(timeout=86400, key_prefix="tmdb_genres")
+    def get_recommendations(self, movie_id: int) -> list[dict]:
+        data = self._get(f"/movie/{movie_id}/recommendations")
+        results = data.get("results", [])
+        recommendations = []
+        for r in results[:6]:
+            release_date = r.get("release_date", "")
+            release_year = int(release_date.split("-")[0]) if release_date else None
+            recommendations.append({
+                "tmdb_id": r["id"],
+                "title": r["title"],
+                "poster_path": r.get("poster_path", ""),
+                "poster_url": f"https://image.tmdb.org/t/p/w200{r['poster_path']}" if r.get("poster_path") else None,
+                "release_year": release_year,
+                "overview": r.get("overview", ""),
+            })
+        return recommendations
     def get_genre_map(self) -> dict[int, str]:
         data = self._get("/genre/movie/list")
         return {g["id"]: g["name"] for g in data.get("genres", [])}
