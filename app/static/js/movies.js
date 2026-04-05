@@ -45,6 +45,7 @@ function openMovieModal(movie) {
       </div>
     </div>
     ${movie.overview ? `<p class="modal-overview">${movie.overview}</p>` : ""}
+    <div id="trailersSection" class="modal-trailers"></div>
     <div class="modal-reviews" id="modalReviews">
       <h3>REVIEWS</h3>
       <div id="reviewsList"></div>
@@ -54,6 +55,7 @@ function openMovieModal(movie) {
   `;
   renderModalActions(movie);
   loadReviews(movie.id);
+  loadTrailers(movie.id);
   modal.classList.remove("hidden");
 }
 function closeModal() {
@@ -144,4 +146,61 @@ async function loadReviews(movieId) {
   } catch {
     // silently fail
   }
+}
+async function loadTrailers(movieId) {
+  /*
+   * Why load trailers separately?
+   * We fetch trailers only when the modal opens, not when listing movies.
+   * This keeps the main page fast and only makes the TMDB API call
+   * when the user actually wants to see trailer info.
+   */
+  const section = document.getElementById("trailersSection");
+  if (!section) return;
+
+  try {
+    const data = await API.get(`/api/movies/${movieId}/trailers`);
+    const trailers = data.trailers;
+
+    if (!trailers || trailers.length === 0) {
+      section.innerHTML = "";
+      return;
+    }
+
+    // Show the first trailer embedded, with buttons for additional ones
+    section.innerHTML = `
+      <div class="trailer-container">
+        <h3 class="trailer-title">TRAILER</h3>
+        <div class="trailer-wrapper">
+          <iframe
+            id="trailerFrame"
+            src="https://www.youtube.com/embed/${trailers[0].key}?rel=0"
+            title="${trailers[0].name}"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+        </div>
+        ${trailers.length > 1 ? `
+          <div class="trailer-tabs">
+            ${trailers.map((t, i) => `
+              <button
+                class="trailer-tab ${i === 0 ? "active" : ""}"
+                onclick="switchTrailer('${t.key}', '${t.name}', this)"
+              >
+                ${t.name}
+              </button>
+            `).join("")}
+          </div>
+        ` : ""}
+      </div>
+    `;
+  } catch {
+    // Silently fail — trailers are a nice to have, not critical
+  }
+}
+function switchTrailer(key, name, btn) {
+  document.getElementById("trailerFrame").src =
+    `https://www.youtube.com/embed/${key}?rel=0&autoplay=1`;
+  document.querySelectorAll(".trailer-tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
 }
