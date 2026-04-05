@@ -151,10 +151,10 @@ async function loadReviews(movieId) {
 async function loadTrailers(movieId) {
   const section = document.getElementById("trailersSection");
   if (!section) return;
+  section.innerHTML = "";
   try {
     const data = await API.get(`/api/movies/${movieId}/trailers`);
     const trailers = data.trailers;
-
     if (!trailers || trailers.length === 0) {
       section.innerHTML = "";
       return;
