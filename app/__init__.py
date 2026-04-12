@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -23,13 +24,16 @@ def create_app(config_name="default"):
     bcrypt.init_app(app)
     from app.logger import setup_logger
     setup_logger(app)
-    google_bp = make_google_blueprint(
-        client_id=app.config["GOOGLE_OAUTH_CLIENT_ID"],
-        client_secret=app.config["GOOGLE_OAUTH_CLIENT_SECRET"],
-        scope=["profile", "email"],
-        redirect_url="/auth/google/callback"
-    )
-    app.register_blueprint(google_bp, url_prefix="/auth/google/login")
+    google_client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    google_client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    if google_client_id and google_client_secret:
+        google_bp = make_google_blueprint(
+            client_id=google_client_id,
+            client_secret=google_client_secret,
+            scope=["profile", "email"],
+            redirect_url="/auth/google/callback"
+        )
+        app.register_blueprint(google_bp, url_prefix="/auth/google/login")
     @app.before_request
     def log_request():
         from flask import request
