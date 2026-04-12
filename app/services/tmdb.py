@@ -73,6 +73,37 @@ class TMDBService:
                 "overview": r.get("overview", ""),
             })
         return recommendations
+        def get_popular(self) -> list[dict]:
+        """Top movies people are watching right now."""
+        data = self._get("/movie/popular")
+        return self._format_list(data.get("results", [])[:18])
+    def get_top_rated(self) -> list[dict]:
+        """Highest rated movies of all time on TMDB."""
+        data = self._get("/movie/top_rated")
+        return self._format_list(data.get("results", [])[:18])
+    def get_now_playing(self) -> list[dict]:
+        """Movies currently in theaters."""
+        data = self._get("/movie/now_playing")
+        return self._format_list(data.get("results", [])[:18])
+    def get_upcoming(self) -> list[dict]:
+        """Movies coming soon to theaters."""
+        data = self._get("/movie/upcoming")
+        return self._format_list(data.get("results", [])[:18])
+    def _format_list(self, results: list) -> list[dict]:
+        formatted = []
+        for r in results:
+            release_date = r.get("release_date", "")
+            release_year = int(release_date.split("-")[0]) if release_date else None
+            formatted.append({
+                "tmdb_id": r["id"],
+                "title": r["title"],
+                "poster_path": r.get("poster_path", ""),
+                "poster_url": f"https://image.tmdb.org/t/p/w342{r['poster_path']}" if r.get("poster_path") else None,
+                "release_year": release_year,
+                "overview": r.get("overview", ""),
+                "rating": r.get("vote_average", 0),
+            })
+        return formatted
     def get_genre_map(self) -> dict[int, str]:
         data = self._get("/genre/movie/list")
         return {g["id"]: g["name"] for g in data.get("genres", [])}
