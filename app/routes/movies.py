@@ -177,3 +177,39 @@ def get_recommendations(movie_id):
         return response, 200
     except TMDBError as e:
         return jsonify({"error": str(e)}), 502
+@movies_bp.route("/popular", methods=["GET"])
+def get_popular():
+    try:
+        movies = tmdb.get_popular()
+        response = jsonify({"movies": movies})
+        response.headers["Cache-Control"] = "no-store"
+        return response, 200
+    except TMDBError as e:
+        return jsonify({"error": str(e)}), 502
+@movies_bp.route("/top_rated", methods=["GET"])
+def get_top_rated():
+    try:
+        movies = tmdb.get_top_rated()
+        response = jsonify({"movies": movies})
+        response.headers["Cache-Control"] = "no-store"
+        return response, 200
+    except TMDBError as e:
+        return jsonify({"error": str(e)}), 502
+@movies_bp.route("/now_playing", methods=["GET"])
+def get_now_playing():
+    try:
+        movies = tmdb.get_now_playing()
+        response = jsonify({"movies": movies})
+        response.headers["Cache-Control"] = "no-store"
+        return response, 200
+    except TMDBError as e:
+        return jsonify({"error": str(e)}), 502
+@movies_bp.route("/upcoming", methods=["GET"])
+def get_upcoming():
+    try:
+        movies = tmdb.get_upcoming()
+        response = jsonify({"movies": movies})
+        response.headers["Cache-Control"] = "no-store"
+        return response, 200
+    except TMDBError as e:
+        return jsonify({"error": str(e)}), 502
