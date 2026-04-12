@@ -1,17 +1,10 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, send_from_directory
+import os
 main_bp = Blueprint("main", __name__)
-@main_bp.route("/")
-def index():
-    return render_template("index.html")
-@main_bp.route("/vault")
-def vault_page():
-    return render_template("vault.html")
-@main_bp.route("/watchlist")
-def watchlist_page():
-    return render_template("watchlist.html")
-@main_bp.route("/login")
-def login_page():
-    return render_template("auth.html", mode="login")
-@main_bp.route("/register")
-def register_page():
-    return render_template("auth.html", mode="register")
+@main_bp.route("/", defaults={"path": ""})
+@main_bp.route("/<path:path>")
+def index(path):
+    react_build = os.path.join(os.path.dirname(__file__), '..', 'static', 'react')
+    if path and os.path.exists(os.path.join(react_build, path)):
+        return send_from_directory(react_build, path)
+    return send_from_directory(react_build, 'index.html')
