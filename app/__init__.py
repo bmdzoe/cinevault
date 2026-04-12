@@ -5,6 +5,7 @@ from flask_login import LoginManager
 from flask_caching import Cache
 from flask_bcrypt import Bcrypt
 from config import config
+from flask_dance.contrib.google import make_google_blueprint
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
@@ -21,6 +22,13 @@ def create_app(config_name="default"):
     login_manager.init_app(app)
     cache.init_app(app)
     bcrypt.init_app(app)
+    google_bp = make_google_blueprint(
+    client_id=app.config["GOOGLE_OAUTH_CLIENT_ID"],
+    client_secret=app.config["GOOGLE_OAUTH_CLIENT_SECRET"],
+    scope=["profile", "email"],
+    redirect_url="/auth/google/callback"
+)
+app.register_blueprint(google_bp, url_prefix="/auth/google/login")
     # Set up logging before anything else so we capture all startup events
     from app.logger import setup_logger
     setup_logger(app)

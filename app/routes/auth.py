@@ -4,6 +4,8 @@ from marshmallow import ValidationError
 from app import db, bcrypt
 from app.models import User
 from app.schemas import RegisterSchema, LoginSchema
+from flask_dance.contrib.google import google
+from flask import redirect, url_for
 import logging
 logger = logging.getLogger(__name__)
 auth_bp = Blueprint("auth", __name__)
@@ -48,3 +50,38 @@ def logout():
 @login_required
 def me():
     return jsonify({"user": current_user.to_dict()}), 200
+@auth_bp.route("/google/callback")
+def google_callback():
+    if not google.authorized:
+        return redirect(url_for("auth.login"))
+    resp = google.get("/oauth2/v2/userinfo")
+    if not resp.ok:
+        return jsonify({"error": "Failed to get user info from Google."}), 502
+    info = resp.json()
+    email = info["email"]
+    name = info.get("name", email.split("@")[0])
+    # Check if user already exists
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        # Create new account automatically
+        # Generate a random password hash since they'll use Google to login
+        import secrets
+        random_pw = bcrypt.generate_password_hash(secrets.token_hex(16)).decode("utf-8")
+        # Make username from their name, ensure it's unique
+        base_username = name.replace(" ", "").lower()[:20]
+        username = base_username
+        counter = 1
+        while User.query.filter_by(username=username).first():
+            username = f"{base_username}{counter}"
+            counter += 1
+        user = User(
+            username=username,
+            email=email,
+            password_hash=random_pw
+        )
+        db.session.add(user)
+        db.session.commit()
+        logger.info(f"New user via Google OAuth: {user.username} ({email})")
+    login_user(user)
+    logger.info(f"User logged in via Google: {user.username}")
+    return redirect("/")

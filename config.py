@@ -25,3 +25,5 @@ config = {
     "testing": TestingConfig,
     "default": DevelopmentConfig,
 }
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
