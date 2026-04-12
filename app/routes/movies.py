@@ -7,7 +7,7 @@ from app.models import Movie, Review
 from app.schemas import MovieUpdateSchema, ReviewSchema, MovieSearchSchema, MovieFilterSchema
 from app.services.tmdb import tmdb, TMDBError
 movies_bp = Blueprint("movies", __name__)
-# ── Search & Add ──
+#Search & Add
 @movies_bp.route("/search", methods=["GET"])
 def search():
     schema = MovieSearchSchema()
@@ -61,7 +61,7 @@ def add_movie():
     db.session.add(movie)
     db.session.commit()
     return jsonify({"message": "Movie saved.", "movie": movie.to_dict()}), 201
-# ── List & Filter ─
+#List & Filter
 @movies_bp.route("/", methods=["GET"])
 def list_movies():
     schema = MovieFilterSchema()
@@ -92,7 +92,7 @@ def list_movies():
         "pages": page.pages,
         "current_page": page.page,
     }), 200
-# ── Single Movie CRUD ─
+#Single Movie CRUD
 @movies_bp.route("/<int:movie_id>", methods=["GET"])
 def get_movie(movie_id):
     movie = Movie.query.get_or_404(movie_id)
@@ -119,7 +119,7 @@ def delete_movie(movie_id):
     db.session.delete(movie)
     db.session.commit()
     return jsonify({"message": "Movie deleted."}), 200
-# ── Reviews ──
+#Reviews 
 @movies_bp.route("/<int:movie_id>/reviews", methods=["POST"])
 @login_required
 def add_review(movie_id):
@@ -158,15 +158,58 @@ def delete_review(movie_id, review_id):
     return jsonify({"message": "Review deleted."}), 200
 @movies_bp.route("/<int:movie_id>/trailers", methods=["GET"])
 def get_trailers(movie_id):
-    """
-    Why a separate endpoint?
-    Trailers are only needed when a user opens the movie modal.
-    Fetching them with every movie in the list would be slow and
-    waste API calls. This way we only fetch when actually needed.
-    """
     movie = Movie.query.get_or_404(movie_id)
     try:
         trailers = tmdb.get_trailers(movie.tmdb_id)
-        return jsonify({"trailers": trailers}), 200
+        response = jsonify({"trailers": trailers})
+        response.headers["Cache-Control"] = "no-store"
+        return response, 200
+    except TMDBError as e:
+        return jsonify({"error": str(e)}), 502
+@movies_bp.route("/<int:movie_id>/recommendations", methods=["GET"])
+def get_recommendations(movie_id):
+    movie = Movie.query.get_or_404(movie_id)
+    try:
+        recommendations = tmdb.get_recommendations(movie.tmdb_id)
+        response = jsonify({"recommendations": recommendations})
+        # Disable caching for recommendations so each movie gets unique results
+        response.headers["Cache-Control"] = "no-store"
+        return response, 200
+    except TMDBError as e:
+        return jsonify({"error": str(e)}), 502
+@movies_bp.route("/popular", methods=["GET"])
+def get_popular():
+    try:
+        movies = tmdb.get_popular()
+        response = jsonify({"movies": movies})
+        response.headers["Cache-Control"] = "no-store"
+        return response, 200
+    except TMDBError as e:
+        return jsonify({"error": str(e)}), 502
+@movies_bp.route("/top_rated", methods=["GET"])
+def get_top_rated():
+    try:
+        movies = tmdb.get_top_rated()
+        response = jsonify({"movies": movies})
+        response.headers["Cache-Control"] = "no-store"
+        return response, 200
+    except TMDBError as e:
+        return jsonify({"error": str(e)}), 502
+@movies_bp.route("/now_playing", methods=["GET"])
+def get_now_playing():
+    try:
+        movies = tmdb.get_now_playing()
+        response = jsonify({"movies": movies})
+        response.headers["Cache-Control"] = "no-store"
+        return response, 200
+    except TMDBError as e:
+        return jsonify({"error": str(e)}), 502
+@movies_bp.route("/upcoming", methods=["GET"])
+def get_upcoming():
+    try:
+        movies = tmdb.get_upcoming()
+        response = jsonify({"movies": movies})
+        response.headers["Cache-Control"] = "no-store"
+        return response, 200
     except TMDBError as e:
         return jsonify({"error": str(e)}), 502

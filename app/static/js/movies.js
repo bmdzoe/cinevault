@@ -25,6 +25,9 @@ function renderMovieCard(movie, options = {}) {
 function openMovieModal(movie) {
   const modal = document.getElementById("movieModal");
   const body = document.getElementById("modalBody");
+  // Fully wipe modal body before rendering new content
+  // This prevents stale content from previous movie showing through
+  body.innerHTML = "";
   const posterHtml = movie.poster_url
     ? `<img class="modal-poster" src="${movie.poster_url}" alt="${movie.title}">`
     : "";
@@ -46,6 +49,7 @@ function openMovieModal(movie) {
     </div>
     ${movie.overview ? `<p class="modal-overview">${movie.overview}</p>` : ""}
     <div id="trailersSection" class="modal-trailers"></div>
+    <div id="recommendationsSection" class="modal-recommendations"></div>
     <div class="modal-reviews" id="modalReviews">
       <h3>REVIEWS</h3>
       <div id="reviewsList"></div>
@@ -53,9 +57,13 @@ function openMovieModal(movie) {
     </div>
     <div class="modal-actions" id="modalActions"></div>
   `;
+  // Store current movie ID on the modal so async callbacks
+  // can check if the modal has been switched before rendering
+  modal.dataset.movieId = movie.id;
   renderModalActions(movie);
   loadReviews(movie.id);
   loadTrailers(movie.id);
+  loadRecommendations(movie.id);
   modal.classList.remove("hidden");
 }
 function closeModal() {
@@ -144,10 +152,101 @@ async function loadReviews(movieId) {
       }
     }
   } catch {
-    // silently fail
   }
 }
-renderModalActions(movie);
-  loadReviews(movie.id);
-  loadTrailers(movie.id);
-  modal.classList.remove("hidden");
+async function loadTrailers(movieId) {
+  const section = document.getElementById("trailersSection");
+  const modal = document.getElementById("movieModal");
+  if (!section) return;
+  section.innerHTML = "";
+  try {
+    const data = await API.get(`/api/movies/${movieId}/trailers`);
+    // Discard results if user switched movies while loading
+    if (modal.dataset.movieId != movieId) return;
+    const trailers = data.trailers;
+    if (!trailers || trailers.length === 0) {
+      section.innerHTML = "";
+      return;
+    }
+    section.innerHTML = `
+      <div class="trailer-container">
+        <h3 class="trailer-title">TRAILER</h3>
+        <div class="trailer-wrapper">
+          <iframe
+            id="trailerFrame"
+            src="https://www.youtube.com/embed/${trailers[0].key}?rel=0"
+            title="${trailers[0].name}"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+        </div>
+        ${trailers.length > 1 ? `
+          <div class="trailer-tabs">
+            ${trailers.map((t, i) => `
+              <button
+                class="trailer-tab ${i === 0 ? "active" : ""}"
+                onclick="switchTrailer('${t.key}', '${t.name}', this)"
+              >
+                ${t.name}
+              </button>
+            `).join("")}
+          </div>
+        ` : ""}
+      </div>
+    `;
+  } catch {
+  }
+}
+function switchTrailer(key, name, btn) {
+  document.getElementById("trailerFrame").src =
+    `https://www.youtube.com/embed/${key}?rel=0&autoplay=1`;
+  document.querySelectorAll(".trailer-tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+}
+async function loadRecommendations(movieId) {
+  const modal = document.getElementById("movieModal");
+  if (!modal) return;
+  // Query section fresh and clear it immediately
+  document.getElementById("recommendationsSection").innerHTML = 
+    '<p style="color:var(--text-muted);font-size:0.8rem;padding:1rem">Loading...</p>';
+  try {
+    const data = await API.get(`/api/movies/${movieId}/recommendations`);
+    // Query the section FRESH after the await
+    // The old reference may be stale after the modal rerenders
+    const section = document.getElementById("recommendationsSection");
+    if (!section) return;
+    // Bail out if user opened a different movie while this was loading
+    if (modal.dataset.movieId != movieId) return;
+    const recs = data.recommendations;
+    if (!recs || recs.length === 0) {
+      section.innerHTML = "";
+      return;
+    }
+    let html = `
+      <div class="recommendations-container">
+        <h3 class="recommendations-title">YOU MIGHT ALSO LIKE</h3>
+        <div class="recommendations-grid">
+    `;
+    recs.forEach(rec => {
+      const poster = rec.poster_url
+        ? `<img class="rec-poster" src="${rec.poster_url}" alt="${rec.title}" loading="lazy">`
+        : `<div class="rec-poster-placeholder">🎬</div>`;
+      html += `
+        <div class="rec-card" onclick="searchRec('${rec.title.replace(/'/g, "\\'")}')">
+          ${poster}
+          <div class="rec-info">
+            <div class="rec-title">${rec.title}</div>
+            <div class="rec-year">${rec.release_year || "—"}</div>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div></div>`;
+    section.innerHTML = html;
+  } catch (err) {
+    console.error("Recommendations error:", err);
+    const section = document.getElementById("recommendationsSection");
+    if (section) section.innerHTML = "";
+  }
+}

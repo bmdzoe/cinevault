@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}CineVault — The Vault{% endblock %}
+{% block content %}
+<section class="page-header">
+  <div>
+    <h1 class="page-title">THE <span class="accent">VAULT</span></h1>
+    <p style="color:var(--text-muted);margin-top:0.5rem">Every movie the community has discovered.</p>
+  </div>
+  <div class="filters">
+    <select id="filterGenre" class="filter-select"><option value="">All Genres</option></select>
+    <select id="filterRating" class="filter-select">
+      <option value="">All Ratings</option>
+      <option>G</option><option>PG</option><option>PG-13</option><option>R</option><option>NC-17</option><option>NR</option>
+    </select>
+    <select id="sortBy" class="filter-select">
+      <option value="added_at">Recently Added</option>
+      <option value="title">Title A–Z</option>
+      <option value="release_year">Release Year</option>
+    </select>
+  </div>
+</section>
+<div class="browse-section">
+  <div id="moviesGrid" class="movies-grid"></div>
+  <div id="pagination" class="pagination"></div>
+</div>
+<div id="movieModal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/movies.js') }}?v={{ range(1, 99999) | random }}"></script>
+<script src="{{ url_for('static', filename='js/vault.js') }}?v={{ range(1, 99999) | random }}"></script>
+{% endblock %}
