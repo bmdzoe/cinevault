@@ -1,4 +1,78 @@
-let currentPage = 1;
+function renderRow(movies, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!movies || movies.length === 0) {
+    container.innerHTML = `<p style="color:var(--text-muted);padding:1rem">Nothing to show.</p>`;
+    return;
+  }
+  movies.forEach(movie => {
+    const card = document.createElement("div");
+    card.className = "row-card";
+    const poster = movie.poster_url
+      ? `<img class="row-card-poster" src="${movie.poster_url}" alt="${movie.title}" loading="lazy">`
+      : `<div class="row-card-placeholder">🎬</div>`;
+    card.innerHTML = `
+      ${poster}
+      <div class="row-card-overlay">
+        <div class="row-card-title">${movie.title}</div>
+        <div class="row-card-year">${movie.release_year || "—"}</div>
+      </div>
+    `;
+    // Clicking opens the search modal so user can save it
+    card.onclick = () => openTMDBModal(movie);
+    container.appendChild(card);
+  });
+}
+// Opens a modal for a TMDB movie that may not be saved yet
+function openTMDBModal(movie) {
+  const modal = document.getElementById("movieModal");
+  const body = document.getElementById("modalBody");
+  body.innerHTML = "";
+  modal.dataset.movieId = movie.tmdb_id;
+  const posterHtml = movie.poster_url
+    ? `<img class="modal-poster" src="${movie.poster_url}" alt="${movie.title}">`
+    : "";
+  body.innerHTML = `
+    <div class="modal-poster-row">
+      ${posterHtml}
+      <div class="modal-header">
+        <div class="modal-title">${movie.title}</div>
+        <div class="modal-meta">
+          <span class="badge">${movie.release_year || "—"}</span>
+          ${movie.rating ? `<span class="badge badge-accent">★ ${typeof movie.rating === 'number' ? movie.rating.toFixed(1) : movie.rating}</span>` : ""}
+        </div>
+      </div>
+    </div>
+    ${movie.overview ? `<p class="modal-overview">${movie.overview}</p>` : ""}
+    <div class="modal-actions" id="modalActions"></div>
+  `;
+  // Save to vault button
+  const actionsEl = document.getElementById("modalActions");
+  if (currentUser) {
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "btn-primary";
+    saveBtn.textContent = "＋ Save to Vault";
+    saveBtn.onclick = async () => {
+      try {
+        // First save to vault via search
+        const searchData = await API.get(`/api/movies/search?title=${encodeURIComponent(movie.title)}`);
+        if (searchData.tmdb_id === movie.tmdb_id || true) {
+          await API.post("/api/movies/", { tmdb_id: movie.tmdb_id, title: movie.title });
+          showToast(`"${movie.title}" saved to the vault!`, "success");
+        }
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    };
+    actionsEl.appendChild(saveBtn);
+  } else {
+    actionsEl.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem"><a href="/login">Log in</a> to save movies to the vault.</p>`;
+  }
+  modal.classList.remove("hidden");
+}
+// Search functionality
 async function searchMovie(e) {
   e.preventDefault();
   const title = document.getElementById("searchInput").value.trim();
@@ -14,8 +88,8 @@ async function searchMovie(e) {
   }
 }
 function renderSearchResult(movie, container) {
-const posterUrl = movie.poster_url || (movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null);
-const posterHtml = posterUrl
+  const posterUrl = movie.poster_url || (movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null);
+  const posterHtml = posterUrl
     ? `<img class="result-poster" src="${posterUrl}" alt="${movie.title}">`
     : `<div class="result-poster-placeholder">🎬</div>`;
   const providers = movie.streaming_providers?.length
@@ -47,87 +121,46 @@ const posterHtml = posterUrl
     try {
       await API.post("/api/movies/", { tmdb_id: movie.tmdb_id, title: movie.title });
       showToast(`"${movie.title}" saved to the vault!`, "success");
-      loadMovies();
     } catch (err) {
       showToast(err.message, "error");
     }
   };
 }
-async function loadMovies() {
-  const genre = document.getElementById("filterGenre").value;
-  const rating = document.getElementById("filterRating").value;
-  const sortBy = document.getElementById("sortBy").value;
-  const params = new URLSearchParams({
-    page: currentPage,
-    per_page: 12,
-    sort_by: sortBy,
-    order: sortBy === "title" ? "asc" : "desc",
-    ...(genre && { genre }),
-    ...(rating && { rating }),
+// Load all category rows on page load
+async function loadCategories() {
+  const categories = [
+    { endpoint: "/api/movies/popular", rowId: "popularRow" },
+    { endpoint: "/api/movies/top_rated", rowId: "topRatedRow" },
+    { endpoint: "/api/movies/now_playing", rowId: "nowPlayingRow" },
+    { endpoint: "/api/movies/upcoming", rowId: "upcomingRow" },
+  ];
+  // Show skeletons while loading
+  categories.forEach(({ rowId }) => {
+    const container = document.getElementById(rowId);
+    if (container) {
+      container.innerHTML = Array(6).fill(
+        `<div class="skeleton row-card" style="flex-shrink:0"></div>`
+      ).join("");
+    }
   });
-  const grid = document.getElementById("moviesGrid");
-  grid.innerHTML = Array(6).fill(`<div class="skeleton" style="aspect-ratio:2/3;border-radius:4px"></div>`).join("");
-  try {
-    const data = await API.get(`/api/movies/?${params}`);
-    grid.innerHTML = "";
-    if (data.movies.length === 0) {
-      grid.innerHTML = `<p class="empty-state" style="grid-column:1/-1">No movies in the vault yet.</p>`;
-    } else {
-      data.movies.forEach(movie => {
-        const card = renderMovieCard(movie, { onClick: openMovieModal });
-        grid.appendChild(card);
-      });
+  // Load all categories in parallel for speed
+  await Promise.all(categories.map(async ({ endpoint, rowId }) => {
+    try {
+      const data = await API.get(endpoint);
+      renderRow(data.movies, rowId);
+    } catch {
+      const container = document.getElementById(rowId);
+      if (container) container.innerHTML = `<p style="color:var(--text-muted);padding:1rem">Failed to load.</p>`;
     }
-    renderPagination(data.pages, data.current_page);
-  } catch (err) {
-    grid.innerHTML = `<p style="color:var(--red);padding:1rem">${err.message}</p>`;
-  }
-}
-function renderPagination(totalPages, current) {
-  const el = document.getElementById("pagination");
-  el.innerHTML = "";
-  if (totalPages <= 1) return;
-  for (let i = 1; i <= totalPages; i++) {
-    const btn = document.createElement("button");
-    btn.className = "page-btn" + (i === current ? " active" : "");
-    btn.textContent = i;
-    btn.onclick = () => { currentPage = i; loadMovies(); window.scrollTo(0, 0); };
-    el.appendChild(btn);
-  }
-}
-async function populateGenreFilter() {
-  try {
-    const data = await API.get("/api/movies/?per_page=200");
-    const genres = new Set();
-    data.movies.forEach(m => {
-      if (m.genre) {
-        m.genre.split(",").forEach(g => {
-          const trimmed = g.trim();
-          if (trimmed) genres.add(trimmed);
-        });
-      }
-    });
-    const select = document.getElementById("filterGenre");
-    // Clear existing options except the first one
-    while (select.options.length > 1) {
-      select.remove(1);
-    }
-    // Sort and add genres
-    [...genres].sort().forEach(g => {
-      const opt = document.createElement("option");
-      opt.value = g;
-      opt.textContent = g;
-      select.appendChild(opt);
-    });
-  } catch (err) {
-    console.error("Genre filter error:", err);
-  }
+  }));
 }
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("searchForm")?.addEventListener("submit", searchMovie);
-  document.getElementById("filterGenre")?.addEventListener("change", () => { currentPage = 1; loadMovies(); });
-  document.getElementById("filterRating")?.addEventListener("change", () => { currentPage = 1; loadMovies(); });
-  document.getElementById("sortBy")?.addEventListener("change", () => { currentPage = 1; loadMovies(); });
-  loadMovies();
-  populateGenreFilter();
+  document.getElementById("modalClose")?.addEventListener("click", () => {
+    document.getElementById("movieModal").classList.add("hidden");
+  });
+  document.querySelector(".modal-backdrop")?.addEventListener("click", () => {
+    document.getElementById("movieModal").classList.add("hidden");
+  });
+  loadCategories();
 });
