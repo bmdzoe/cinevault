@@ -7,13 +7,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v={{ range(1, 99999) | random }}">
 </head>
 <body>
   <nav class="navbar">
     <a href="/" class="nav-logo">CINE<span>VAULT</span></a>
     <div class="nav-links">
       <a href="/" class="nav-link">Discover</a>
+      <a href="/vault" class="nav-link">The Vault</a>
       <a href="/watchlist" class="nav-link">My List</a>
       <span id="nav-auth"></span>
     </div>
@@ -22,9 +23,9 @@
     {% block content %}{% endblock %}
   </main>
   <div id="toast-container"></div>
-<script src="{{ url_for('static', filename='js/api.js') }}?v={{ range(1, 99999) | random }}"></script>
-<script src="{{ url_for('static', filename='js/toast.js') }}?v={{ range(1, 99999) | random }}"></script>
-<script src="{{ url_for('static', filename='js/auth.js') }}?v={{ range(1, 99999) | random }}"></script>
+  <script src="{{ url_for('static', filename='js/api.js') }}?v={{ range(1, 99999) | random }}"></script>
+  <script src="{{ url_for('static', filename='js/toast.js') }}?v={{ range(1, 99999) | random }}"></script>
+  <script src="{{ url_for('static', filename='js/auth.js') }}?v={{ range(1, 99999) | random }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>
