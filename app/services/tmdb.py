@@ -7,16 +7,13 @@ logger = logging.getLogger(__name__)
 
 
 class TMDBService:
-    """Encapsulates all TMDB API interactions with caching and error handling."""
 
     def _get(self, endpoint: str, params: dict = None) -> dict:
         base_url = current_app.config["TMDB_BASE_URL"]
         api_key = current_app.config["TMDB_API_KEY"]
         url = f"{base_url}{endpoint}"
         merged_params = {"api_key": api_key, **(params or {})}
-
         logger.info(f"TMDB request: {endpoint}")
-
         try:
             response = requests.get(url, params=merged_params, timeout=8)
             response.raise_for_status()
@@ -52,15 +49,6 @@ class TMDBService:
         providers = us.get("flatrate", [])
         return [p["provider_name"] for p in providers]
 
-    @cache.cached(timeout=86400, key_prefix="tmdb_genres")
-    def get_genre_map(self) -> dict[int, str]:
-        data = self._get("/genre/movie/list")
-        return {g["id"]: g["name"] for g in data.get("genres", [])}
-
-    def resolve_genres(self, genre_ids: list[int]) -> str:
-        genre_map = self.get_genre_map()
-        return ", ".join(genre_map.get(gid, "Unknown") for gid in genre_ids)
-
     def get_trailers(self, movie_id: int) -> list[dict]:
         data = self._get(f"/movie/{movie_id}/videos")
         videos = data.get("results", [])
@@ -76,6 +64,64 @@ class TMDBService:
                 if v["site"] == "YouTube"
             ]
         return trailers[:3]
+
+    def get_recommendations(self, movie_id: int) -> list[dict]:
+        data = self._get(f"/movie/{movie_id}/recommendations")
+        results = data.get("results", [])
+        recommendations = []
+        for r in results[:6]:
+            release_date = r.get("release_date", "")
+            release_year = int(release_date.split("-")[0]) if release_date else None
+            recommendations.append({
+                "tmdb_id": r["id"],
+                "title": r["title"],
+                "poster_path": r.get("poster_path", ""),
+                "poster_url": f"https://image.tmdb.org/t/p/w200{r['poster_path']}" if r.get("poster_path") else None,
+                "release_year": release_year,
+                "overview": r.get("overview", ""),
+            })
+        return recommendations
+
+    def _format_list(self, results: list) -> list[dict]:
+        formatted = []
+        for r in results:
+            release_date = r.get("release_date", "")
+            release_year = int(release_date.split("-")[0]) if release_date else None
+            formatted.append({
+                "tmdb_id": r["id"],
+                "title": r["title"],
+                "poster_path": r.get("poster_path", ""),
+                "poster_url": f"https://image.tmdb.org/t/p/w342{r['poster_path']}" if r.get("poster_path") else None,
+                "release_year": release_year,
+                "overview": r.get("overview", ""),
+                "rating": r.get("vote_average", 0),
+            })
+        return formatted
+
+    def get_popular(self) -> list[dict]:
+        data = self._get("/movie/popular")
+        return self._format_list(data.get("results", [])[:18])
+
+    def get_top_rated(self) -> list[dict]:
+        data = self._get("/movie/top_rated")
+        return self._format_list(data.get("results", [])[:18])
+
+    def get_now_playing(self) -> list[dict]:
+        data = self._get("/movie/now_playing")
+        return self._format_list(data.get("results", [])[:18])
+
+    def get_upcoming(self) -> list[dict]:
+        data = self._get("/movie/upcoming")
+        return self._format_list(data.get("results", [])[:18])
+
+    @cache.cached(timeout=86400, key_prefix="tmdb_genres")
+    def get_genre_map(self) -> dict[int, str]:
+        data = self._get("/genre/movie/list")
+        return {g["id"]: g["name"] for g in data.get("genres", [])}
+
+    def resolve_genres(self, genre_ids: list[int]) -> str:
+        genre_map = self.get_genre_map()
+        return ", ".join(genre_map.get(gid, "Unknown") for gid in genre_ids)
 
     def fetch_full_movie(self, tmdb_result: dict) -> dict:
         movie_id = tmdb_result["id"]
@@ -94,7 +140,6 @@ class TMDBService:
 
 
 class TMDBError(Exception):
-    """Raised when TMDB API calls fail."""
     pass
 
 
