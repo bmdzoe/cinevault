@@ -1,11 +1,9 @@
 import logging
 import requests
+from datetime import date
 from flask import current_app
 from app import cache
-
 logger = logging.getLogger(__name__)
-
-
 class TMDBService:
 
     def _get(self, endpoint: str, params: dict = None) -> dict:
@@ -99,19 +97,18 @@ class TMDBService:
         return formatted
 
     def get_popular(self) -> list[dict]:
-        data = self._get("/movie/popular")
+        data = self._get("/movie/popular", {"region": "US"})
         return self._format_list(data.get("results", [])[:18])
 
     def get_top_rated(self) -> list[dict]:
-        data = self._get("/movie/top_rated")
+        data = self._get("/movie/top_rated", {"region": "US"})
         return self._format_list(data.get("results", [])[:18])
 
     def get_now_playing(self) -> list[dict]:
-        data = self._get("/movie/now_playing")
+        data = self._get("/movie/now_playing", {"region": "US"})
         return self._format_list(data.get("results", [])[:18])
 
-       def get_upcoming(self) -> list[dict]:
-        from datetime import date
+    def get_upcoming(self) -> list[dict]:
         today = date.today().isoformat()
         data = self._get("/movie/upcoming", {"region": "US"})
         results = [
@@ -143,10 +140,6 @@ class TMDBService:
             "poster_path": tmdb_result.get("poster_path", ""),
             "streaming_providers": self.get_streaming_providers(movie_id),
         }
-
-
 class TMDBError(Exception):
     pass
-
-
 tmdb = TMDBService()
