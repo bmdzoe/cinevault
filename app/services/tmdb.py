@@ -110,9 +110,15 @@ class TMDBService:
         data = self._get("/movie/now_playing")
         return self._format_list(data.get("results", [])[:18])
 
-    def get_upcoming(self) -> list[dict]:
-        data = self._get("/movie/upcoming")
-        return self._format_list(data.get("results", [])[:18])
+       def get_upcoming(self) -> list[dict]:
+        from datetime import date
+        today = date.today().isoformat()
+        data = self._get("/movie/upcoming", {"region": "US"})
+        results = [
+            r for r in data.get("results", [])
+            if r.get("release_date", "") > today
+        ]
+        return self._format_list(results[:18])
 
     @cache.cached(timeout=86400, key_prefix="tmdb_genres")
     def get_genre_map(self) -> dict[int, str]:
