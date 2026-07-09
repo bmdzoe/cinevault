@@ -1,5 +1,6 @@
 import os
 from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
@@ -20,6 +21,7 @@ def unauthorized():
     return jsonify({"error": "Not authenticated."}), 401
 def create_app(config_name="default"):
     app = Flask(__name__)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
     app.config.from_object(config[config_name])
     db.init_app(app)
     migrate.init_app(app, db)
