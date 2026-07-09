@@ -30,6 +30,10 @@ def register():
     return jsonify({"message": "Account created.", "user": user.to_dict()}), 201
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    if request.method == "GET":
+        # Flask-Login redirects unauthenticated users here (e.g. from /auth/me).
+        # There's no JSON body on a GET, so just tell the client they're logged out.
+        return jsonify({"error": "Not authenticated."}), 401
     schema = LoginSchema()
     try:
         data = schema.load(request.get_json() or {})
